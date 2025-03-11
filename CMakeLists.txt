@@ -13,20 +13,31 @@ set(CMAKE_COLOR_DIAGNOSTICS ON)
 
 option(INSTALL_DOCUMENTATION "Generate and install the documentation" OFF)
 
-include(cmake/base.cmake)
+# include(cmake/base.cmake) ################################
 project(${PROJECT_NAME})
 
 # MuJoCo
-if(NOT DEFINED MUJOCO_ROOT_DIR)
-  message(FATAL_ERROR "Set \"MUJOCO_ROOT_DIR\"")
-elseif(NOT EXISTS ${MUJOCO_ROOT_DIR})
-  message(FATAL_ERROR "\"MUJOCO_ROOT_DIR\" is invalid path: ${MUJOCO_ROOT_DIR}")
+find_package(mujoco QUIET)
+if(mujoco_FOUND)
+  message(STATUS "Mujoco build from source has been found")
+  set(MUJOCO_LIB mujoco::mujoco)
+  set(MUJOCO_INCLUDE_DIR ${MUJOCO_INCLUDE_DIR})
+elseif(DEFINED ENV{MUJOCO_DIR})
+  message(STATUS "Mujoco build from source has not been found. Attempting to find the binary in $ENV{MUJOCO_DIR} instead.")
+  find_library(MUJOCO_LIB mujoco HINTS $ENV{MUJOCO_DIR}/lib)
+  if(NOT MUJOCO_LIB)
+    message(FATAL_ERROR "Failed to find binary in $ENV{MUJOCO_DIR}")
+  endif()
+  set(MUJOCO_LIB_DIR $ENV{MUJOCO_DIR}/lib)
+  set(MUJOCO_INCLUDE_DIR $ENV{MUJOCO_DIR}/include)
+  set(MUJOCO_BIN_DIR $ENV{MUJOCO_DIR}/bin)
+else()
+  message(FATAL_ERROR "Failed to find mujoco with find_package.
+  Either build and install mujoco from source or set the MUJOCO_DIR environment variable to tell CMake where to find the binary install. ")
 endif()
-set(MUJOCO_INCLUDE_DIR "${MUJOCO_ROOT_DIR}/include")
-set(MUJOCO_LIB_DIR "${MUJOCO_ROOT_DIR}/lib")
-set(MUJOCO_BIN_DIR "${MUJOCO_ROOT_DIR}/bin")
-set(MUJOCO_REQUIRED_VERSION 235)
 
+
+# MuJoCo
 set(MUJOCO_MAIN_HEADER "${MUJOCO_INCLUDE_DIR}/mujoco/mujoco.h")
 if(NOT EXISTS "${MUJOCO_MAIN_HEADER}")
   message(
@@ -43,6 +54,7 @@ else()
       "Could not extract MuJoCo version from the header, please contact this package developers"
   )
 endif()
+set(MUJOCO_REQUIRED_VERSION 235)
 if(${MUJOCO_VERSION} LESS ${MUJOCO_REQUIRED_VERSION})
   message(
     FATAL_ERROR
@@ -81,7 +93,7 @@ rosidl_generate_interfaces(
   geometry_msgs
   builtin_interfaces)
 
-install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY launch xml DESTINATION share/${PROJECT_NAME})
 
 ament_export_dependencies(rosidl_default_runtime)
 
