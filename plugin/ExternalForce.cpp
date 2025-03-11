@@ -172,7 +172,7 @@ void ExternalForce::compute(const mjModel *, // m
   force[1] = msg_->force.y;
   force[2] = msg_->force.z;
   mjtNum pos_world[3];
-  mju_rotVecMat(pos_world, pos_local, d->xmat + 9 * body_id_);
+  mju_rotVecQuat(pos_world, pos_local, d->xmat + 9 * body_id_);
   mju_addTo3(pos_world, d->xpos + 3 * body_id_);
   mjtNum moment_arm[3];
   mju_sub3(moment_arm, pos_world, d->xipos + 3 * body_id_);
@@ -222,7 +222,7 @@ void ExternalForce::visualize(const mjModel *, // m
   force[1] = msg_->force.y;
   force[2] = msg_->force.z;
   mjtNum pos_world[3];
-  mju_rotVecMat(pos_world, pos_local, d->xmat + 9 * body_id_);
+  mju_rotVecQuat(pos_world, pos_local, d->xmat + 9 * body_id_);  
   mju_addTo3(pos_world, d->xpos + 3 * body_id_);
   mjtNum arrow_end[3];
   mju_addScl3(arrow_end, pos_world, force, vis_scale_);
@@ -230,8 +230,8 @@ void ExternalForce::visualize(const mjModel *, // m
   constexpr mjtNum width = 0.01;
   mjvGeom * force_geom = scn->geoms + scn->ngeom;
   mjv_initGeom(force_geom, mjGEOM_NONE, NULL, NULL, NULL, rgba);
-  mjv_makeConnector(force_geom, mjGEOM_ARROW, width, pos_world[0], pos_world[1], pos_world[2], arrow_end[0],
-                    arrow_end[1], arrow_end[2]);
+
+  mjv_connector(force_geom, mjGEOM_ARROW, width, pos_world, arrow_end);
   force_geom->objtype = mjOBJ_UNKNOWN;
   force_geom->objid = -1;
   force_geom->category = mjCAT_DECOR;
