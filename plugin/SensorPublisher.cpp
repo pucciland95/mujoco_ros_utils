@@ -168,7 +168,7 @@ SensorPublisher::SensorPublisher(const mjModel* m,
    if (options_.topic_name.empty())
    {
       std::string sensor_name = std::string(mj_id2name(m, mjOBJ_SENSOR, options_.sensor_id));
-      options_.topic_name = "mujoco/" + sensor_name;
+      options_.topic_name = sensor_name;
    }
 
    int argc = 0;
@@ -179,7 +179,8 @@ SensorPublisher::SensorPublisher(const mjModel* m,
    }
    rclcpp::NodeOptions node_options;
 
-   nh_ = rclcpp::Node::make_shared("sensor_" + options_.sensor_name, "mujoco_sensor", node_options);
+   std::string ns = "mujoco_ros";
+   nh_ = rclcpp::Node::make_shared("sensor_" + options_.sensor_name, ns, node_options);
    if (options_.msg_type == MsgScalar)
    {
       pub_ = nh_->create_publisher<mujoco_ros_utils::msg::ScalarStamped>(options_.topic_name, 1);

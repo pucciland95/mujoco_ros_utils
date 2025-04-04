@@ -150,7 +150,7 @@ PosePublisher* PosePublisher::Create(const mjModel* m, mjData* d, int plugin_id)
       return nullptr;
    }
    options.sensor_id = sensor_id;
-   options.body_id = m->sensor_objid[sensor_id];
+   int body_id = m->sensor_objid[sensor_id];
    options.body_name = std::string(mj_id2name(m, mjOBJ_XBODY, sensor_id));
 
    return new PosePublisher(m, d, options);
@@ -189,7 +189,8 @@ PosePublisher::PosePublisher(const mjModel* m,
    }
    rclcpp::NodeOptions node_options;
 
-   nh_ = rclcpp::Node::make_shared("pose_" + body_name , "mujoco_ros", node_options);
+   std::string ns = "mujoco_ros";
+   nh_ = rclcpp::Node::make_shared("pose_" + options.body_name, ns, node_options);
    if (options_.output_tf)
    {
       tf_br_ = std::make_unique<tf2_ros::TransformBroadcaster>(nh_);
