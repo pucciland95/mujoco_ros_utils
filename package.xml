@@ -4,11 +4,11 @@
   <description>
     ROS-based MuJoCo utilities
   </description>
-  <maintainer email="m-murooka@aist.go.jp">Masaki Murooka</maintainer>
+  <maintainer email="niccolo.lucci@hirorobotics.com">Niccolo Lucci</maintainer>
   <license>BSD</license>
 
   <url>http://ros.org/wiki/mujoco_ros_utils</url>
-  <author>Masaki Murooka</author>
+  <author>Niccolo Lucci</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>rosidl_default_generators</buildtool_depend>

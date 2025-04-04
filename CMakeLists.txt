@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
 set(PROJECT_NAME mujoco_ros_utils)
-set(PROJECT_GENERATED_HEADERS_SKIP_DEPRECATED ON)
-set(PROJECT_GENERATED_HEADERS_SKIP_CONFIG ON)
-set(PROJECT_GENERATED_HEADERS_SKIP_WARNING ON)
-set(PROJECT_URL https://github.com/isri-aist/MujocoRosUtils)
-set(PROJECT_DESCRIPTION "")
 set(CMAKE_CXX_STANDARD 17)
 set(PROJECT_USE_CMAKE_EXPORT FALSE)
 set(CXX_DISABLE_WERROR ON)
@@ -93,14 +88,10 @@ rosidl_generate_interfaces(
   geometry_msgs
   builtin_interfaces)
 
-install(DIRECTORY launch xml DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY xml DESTINATION share/${PROJECT_NAME})
 
 ament_export_dependencies(rosidl_default_runtime)
 
 ament_package()
 add_subdirectory(plugin)
 # add_subdirectory(xml)
-
-if(INSTALL_DOCUMENTATION)
-  add_subdirectory(doc)
-endif()
