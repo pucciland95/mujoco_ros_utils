@@ -1,13 +1,7 @@
-**This is the branch for ROS2; use [the ros1 branch](https://github.com/isri-aist/MujocoRosUtils/tree/ros1) for ROS1.**
+# MujocoRosUtils
+This repo originates from [this repo](https://github.com/isri-aist/MujocoRosUtils). It has been modified and improved so that it can be used in combination with [mujoco_ros_control](https://github.com/pucciland95/mujoco_ros2_control) to stream information from 
+Mujoco simulation to ROS2 ecosystem.
 
-# [MujocoRosUtils](https://github.com/isri-aist/MujocoRosUtils)
-ROS-based MuJoCo utilities
-
-[![CI](https://github.com/isri-aist/MujocoRosUtils/actions/workflows/ci.yaml/badge.svg)](https://github.com/isri-aist/MujocoRosUtils/actions/workflows/ci.yaml)
-[![Documentation](https://img.shields.io/badge/doxygen-online-brightgreen?logo=read-the-docs&style=flat)](https://isri-aist.github.io/MujocoRosUtils/)
-[![LICENSE](https://img.shields.io/github/license/isri-aist/MujocoRosUtils)](https://github.com/isri-aist/MujocoRosUtils/blob/master/LICENSE)
-
-https://github.com/isri-aist/MujocoRosUtils/assets/6636600/6cc3bc6c-113d-4a1d-97f5-d75b1000fc8a
 
 ## Features
 - You can retrieve body poses and camera images, send commands to actuators, and apply external forces to the body in MuJoCo via ROS interfaces.
@@ -21,37 +15,6 @@ https://github.com/isri-aist/MujocoRosUtils/assets/6636600/6cc3bc6c-113d-4a1d-97
 
 ### Dependencies
 - [MuJoCo](https://github.com/deepmind/mujoco) (>= 2.3.5)
-
-### Installation procedure
-```bash
-# Setup catkin workspace.
-$ mkdir -p ${HOME}/ros/ws_mujoco/src
-$ cd ${HOME}/ros/ws_mujoco
-$ wstool init src
-$ wstool set -t src isri-aist/MujocoRosUtils git@github.com:isri-aist/MujocoRosUtils.git --git -y
-$ wstool update -t src
-# Install dependent packages.
-$ source /opt/ros/${ROS_DISTRO}/setup.bash
-$ rosdep install -y -r --from-paths src --ignore-src
-# Build a package.
-$ colcon build --packages-select mujoco_ros_utils --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DMUJOCO_ROOT_DIR=<absolute path to MuJoCo>
-```
-`<absolute path to MuJoCo>` is the path to the root directory of MuJoCo.
-For example, `${HOME}/.mujoco/mujoco-2.3.5` if you installed MuJoCo from release, or `${HOME}/src/mujoco` if you installed it from source.
-
-Add `source ${HOME}/ros/ws_mujoco/devel/setup.bash` to `${HOME}/.bashrc`.
-
-## Examples
-Assume that MuJoCo is installed in `${HOME}/.mujoco/mujoco-2.3.5` from release, and the path to the catkin workspace is `${HOME}/ros/ws_mujoco`.
-```bash
-# Terminal 1
-$ cd ${HOME}/.mujoco/mujoco-2.3.5/bin
-$ ./simulate `ros2 pkg prefix mujoco_ros_utils`/share/xml/sample_mujoco_ros_utils.xml
-# Terminal 2
-$ ros2 launch mujoco_ros_utils display.launch.py
-```
-To visualize a point cloud restored from a depth image, add the `points:=true` option to `display.launch`.
-(`ros-${ROS_DISTRO}-depth-image-proc` must be installed.)
 
 ## Plugins
 ### MujocoRosUtils::ClockPublisher
