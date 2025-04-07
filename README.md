@@ -1,11 +1,17 @@
 # MujocoRosUtils
-This repo originates from [this repo](https://github.com/isri-aist/MujocoRosUtils). It has been modified and improved so that it can be used in combination with [mujoco_ros_control](https://github.com/pucciland95/mujoco_ros2_control) to stream information from 
-Mujoco simulation to ROS2 ecosystem.
+This repo originates from [this repo](https://github.com/isri-aist/MujocoRosUtils). It has been modified and improved so that it can be used in combination with [mujoco_ros_control](https://github.com/pucciland95/mujoco_ros2_control) to stream information from Mujoco simulation to ROS2 ecosystem.
 
 
 ## Features
-- You can retrieve body poses and camera images, send commands to actuators, and apply external forces to the body in MuJoCo via ROS interfaces.
-- Since it is in plugin style, you can use it without rebuilding MuJoCo from the source.
+The repo is composed of several scripts that implement [Mujoco Plugins](https://mujoco.readthedocs.io/en/stable/programming/extension.html#engine-plugins) to streamline the information from Mujoco to Ros2 and viceversa.
+There are pluing for:
+- Retrieve body poses
+- Stream camera images
+- Stream sensor data like Force/Torque sensors
+- Send commands to actuators
+- Apply external forces to the body in MuJoCo via ROS interfaces.
+
+Since it is in plugin style, you can use it without rebuilding MuJoCo from the source.
 
 ## Install
 
