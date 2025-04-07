@@ -1,5 +1,5 @@
 # MujocoRosUtils
-This repo originates from [this repo](https://github.com/isri-aist/MujocoRosUtils). It has been modified and improved so that it can be used in combination with [mujoco_ros_control](https://github.com/pucciland95/mujoco_ros2_control) to stream information from Mujoco simulation to ROS2 ecosystem.
+This repo originates from [this repo](https://github.com/isri-aist/MujocoRosUtils). It has been modified and improved so that it can be used in combination with [mujoco_ros_control](https://github.com/pucciland95/mujoco_ros2_control) to stream information from Mujoco simulation to ROS2 ecosystem or it can be used by itself.
 
 
 ## Features
