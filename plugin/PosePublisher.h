@@ -53,6 +53,12 @@ class PosePublisher
     */
    void reset(const mjModel* m, int plugin_id);
 
+   /** \brief Destroy.
+    \param m model
+    \param plugin_id plugin ID
+    */
+   void destroy();
+
    /** \brief Compute.
        \param m model
        \param d data

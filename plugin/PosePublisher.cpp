@@ -42,7 +42,11 @@ void PosePublisher::RegisterPlugin()
    };
 
    plugin.destroy = +[](mjData* d, int plugin_id) {
-      delete reinterpret_cast<PosePublisher*>(d->plugin_data[plugin_id]);
+      auto plugin_instance = reinterpret_cast<PosePublisher*>(d->plugin_data[plugin_id]);
+      plugin_instance->destroy();
+
+      delete plugin_instance;
+
       d->plugin_data[plugin_id] = 0;
    };
 
@@ -144,14 +148,15 @@ PosePublisher* PosePublisher::Create(const mjModel* m, mjData* d, int plugin_id)
       mju_error("[PosePublisher] Plugin not found in sensors.");
       return nullptr;
    }
+   options.sensor_id = sensor_id;
+
    if (m->sensor_objtype[sensor_id] != mjOBJ_XBODY)
    {
       mju_error("[PosePublisher] Plugin must be attached to a xbody.");
       return nullptr;
    }
-   options.sensor_id = sensor_id;
-   int body_id = m->sensor_objid[sensor_id];
-   options.body_name = std::string(mj_id2name(m, mjOBJ_XBODY, sensor_id));
+   options.body_id = m->sensor_objid[sensor_id];
+   options.body_name = std::string(mj_id2name(m, mjOBJ_XBODY, options.body_id));
 
    return new PosePublisher(m, d, options);
 }
@@ -170,11 +175,11 @@ PosePublisher::PosePublisher(const mjModel* m,
    }
    if (options_.pose_topic_name.empty())
    {
-      options_.pose_topic_name = "mujoco/" + body_name + "/pose";
+      options_.pose_topic_name = body_name + "/pose";
    }
    if (options_.vel_topic_name.empty())
    {
-      options_.vel_topic_name = "mujoco/" + body_name + "/vel";
+      options_.vel_topic_name = body_name + "/vel";
    }
    if (options_.tf_child_frame_id.empty())
    {
@@ -202,6 +207,11 @@ PosePublisher::PosePublisher(const mjModel* m,
    }
 
    RCLCPP_INFO(nh_->get_logger(), "[PosePublisher] Create.");
+}
+
+void PosePublisher::destroy()
+{
+   return;
 }
 
 void PosePublisher::reset(const mjModel*,  // m
