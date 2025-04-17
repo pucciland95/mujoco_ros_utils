@@ -254,7 +254,9 @@ ImagePublisher::ImagePublisher(const mjModel * m,
   }
   rclcpp::NodeOptions node_options;
 
-  nh_ = rclcpp::Node::make_shared("mujoco_ros", node_options);
+  std::string ns = "mujoco_ros";
+
+  nh_ = rclcpp::Node::make_shared("image_publisher", ns, node_options);
   color_pub_ = nh_->create_publisher<sensor_msgs::msg::Image>(color_topic_name, 1);
   depth_pub_ = nh_->create_publisher<sensor_msgs::msg::Image>(depth_topic_name, 1);
   info_pub_ = nh_->create_publisher<sensor_msgs::msg::CameraInfo>(info_topic_name, 1);
