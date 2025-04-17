@@ -71,6 +71,7 @@ protected:
   rclcpp::Node::SharedPtr nh_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
   rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr sub_;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr pub_;  // Dichiarazione del publisher
   //! @}
 };
 

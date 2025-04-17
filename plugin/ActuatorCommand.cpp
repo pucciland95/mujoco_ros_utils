@@ -123,10 +123,17 @@ ActuatorCommand::ActuatorCommand(const mjModel * m,
   }
   rclcpp::NodeOptions node_options;
 
-  nh_ = rclcpp::Node::make_shared("actuator_command", node_options);
+  std::string ns = "mujoco_ros";
+  nh_ = rclcpp::Node::make_shared("actuator_command", ns, node_options);
+
+  // Subscriber
   sub_ = nh_->create_subscription<std_msgs::msg::Float64>(
       topic_name, 1, std::bind(&ActuatorCommand::callback, this, std::placeholders::_1));
-  // // Use a dedicated queue so as not to call callbacks of other modules
+
+  // Publisher
+  pub_ = nh_->create_publisher<std_msgs::msg::Float64>("gripper_actuator_state", 10);
+
+  // Use a dedicated queue so as not to call callbacks of other modules
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor_->add_node(nh_);
 }
@@ -135,6 +142,7 @@ void ActuatorCommand::reset(const mjModel *, // m
                             int // plugin_id
 )
 {
+  ctrl_ = 0.0;
 }
 
 void ActuatorCommand::compute(const mjModel *, // m
@@ -149,6 +157,13 @@ void ActuatorCommand::compute(const mjModel *, // m
   if(!std::isnan(ctrl_))
   {
     d->ctrl[actuator_id_] = ctrl_;
+
+    // Publish the received data to the /gripper_actuator_state topic
+    auto pub_msg = std_msgs::msg::Float64();
+    pub_msg.data = ctrl_;
+    // pub_msg->data = msg->data;
+    pub_->publish(pub_msg);
+
     ctrl_ = std::numeric_limits<mjtNum>::quiet_NaN();
   }
 }
