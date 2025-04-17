@@ -7,6 +7,13 @@ target_include_directories(
                         $<INSTALL_INTERFACE:include>)
 target_include_directories(MujocoRosUtils PRIVATE ${MUJOCO_INCLUDE_DIR})
 target_include_directories(MujocoRosUtils PUBLIC ${ament_INCLUDE_DIRS})
+
+# Includi le directory
+include_directories(
+  include
+  ${EIGEN3_INCLUDE_DIR}
+)
+
 ament_target_dependencies(
   MujocoRosUtils
   PUBLIC
@@ -15,6 +22,7 @@ ament_target_dependencies(
   geometry_msgs
   visualization_msgs
   tf2_ros
+  tf2_eigen
   sensor_msgs
   builtin_interfaces)
 add_dependencies(MujocoRosUtils ${PROJECT_NAME})

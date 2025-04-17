@@ -5,6 +5,7 @@
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/transform_broadcaster.h>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 #include <mujoco/mjdata.h>
 #include <mujoco/mjmodel.h>
@@ -18,7 +19,8 @@ namespace MujocoRosUtils
 
 struct PosePublisherOptions
 {
-   std::string frame_id;
+   std::string frame_name;
+   int frame_id;
    std::string pose_topic_name;
    std::string vel_topic_name;
    mjtNum publish_rate;

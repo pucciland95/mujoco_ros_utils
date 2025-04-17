@@ -72,12 +72,18 @@ PosePublisher* PosePublisher::Create(const mjModel* m, mjData* d, int plugin_id)
 
    // frame_id
    const char* frame_id_char = mj_getPluginConfig(m, plugin_id, "frame_id");
-   std::string frame_id = "";
+   std::string frame_name = "";
    if (strlen(frame_id_char) > 0)
    {
-      frame_id = std::string(frame_id_char);
+      frame_name = std::string(frame_id_char);
    }
-   options.frame_id = frame_id;
+   options.frame_name = frame_name;
+   options.frame_id = mj_name2id(m, mjOBJ_BODY, options.frame_name.c_str());
+   if (options.frame_id == -1)
+   {
+      mju_error("[PosePublisher] `frame_name` is not found among objects.");
+      return nullptr;
+   }
 
    // pose_topic_name
    const char* pose_topic_name_char = mj_getPluginConfig(m, plugin_id, "pose_topic_name");
@@ -169,9 +175,9 @@ PosePublisher::PosePublisher(const mjModel* m,
    publish_skip_ = std::max(static_cast<int>(1.0 / (options_.publish_rate * m->opt.timestep)), 1);
 
    std::string body_name = options.body_name;
-   if (options_.frame_id.empty())
+   if (options_.frame_name.empty())
    {
-      options_.frame_id = "map";
+      options_.frame_name = "map";
    }
    if (options_.pose_topic_name.empty())
    {
@@ -231,11 +237,23 @@ void PosePublisher::compute(const mjModel* m, mjData* d, int  // plugin_id
 
    rclcpp::Time stamp_now = nh_->get_clock()->now();
 
+   // TODO: to this once!
+   Eigen::Affine3d w_T_ref;
+   w_T_ref.translation() = Eigen::Vector3d(d->xpos[3 * options_.frame_id + 0],
+                                             d->xpos[3 * options_.frame_id + 1],
+                                             d->xpos[3 * options_.frame_id + 2]);
+   w_T_ref.linear() = Eigen::Quaterniond(d->xquat[4 * options_.frame_id + 0],
+                                           d->xquat[4 * options_.frame_id + 1],
+                                           d->xquat[4 * options_.frame_id + 2],
+                                           d->xquat[4 * options_.frame_id + 3]).toRotationMatrix();
+
+
    if (options_.output_tf)
    {
+      // TODO: fix transformation
       geometry_msgs::msg::TransformStamped msg;
       msg.header.stamp = stamp_now;
-      msg.header.frame_id = options_.frame_id;
+      msg.header.frame_id = options_.frame_name;
       msg.child_frame_id = options_.tf_child_frame_id;
       msg.transform.translation.x = d->xpos[3 * options_.body_id + 0];
       msg.transform.translation.y = d->xpos[3 * options_.body_id + 1];
@@ -250,7 +268,7 @@ void PosePublisher::compute(const mjModel* m, mjData* d, int  // plugin_id
    {
       geometry_msgs::msg::PoseStamped pose_msg;
       pose_msg.header.stamp = stamp_now;
-      pose_msg.header.frame_id = options_.frame_id;
+      pose_msg.header.frame_id = options_.frame_name;
       pose_msg.pose.position.x = d->xpos[3 * options_.body_id + 0];
       pose_msg.pose.position.y = d->xpos[3 * options_.body_id + 1];
       pose_msg.pose.position.z = d->xpos[3 * options_.body_id + 2];
@@ -258,13 +276,20 @@ void PosePublisher::compute(const mjModel* m, mjData* d, int  // plugin_id
       pose_msg.pose.orientation.x = d->xquat[4 * options_.body_id + 1];
       pose_msg.pose.orientation.y = d->xquat[4 * options_.body_id + 2];
       pose_msg.pose.orientation.z = d->xquat[4 * options_.body_id + 3];
+
+      Eigen::Affine3d w_T_obj;
+      tf2::fromMsg(pose_msg.pose, w_T_obj);
+
+      Eigen::Affine3d ref_T_obj = w_T_ref.inverse() * w_T_obj;
+      pose_msg.pose = Eigen::toMsg(ref_T_obj);
+
       pose_pub_->publish(pose_msg);
 
       geometry_msgs::msg::TwistStamped vel_msg;
       mjtNum vel[6];
       mj_objectVelocity(m, d, mjOBJ_XBODY, options_.body_id, vel, 0);
       vel_msg.header.stamp = stamp_now;
-      vel_msg.header.frame_id = options_.frame_id;
+      vel_msg.header.frame_id = options_.frame_name;
       vel_msg.twist.linear.x = vel[3];
       vel_msg.twist.linear.y = vel[4];
       vel_msg.twist.linear.z = vel[5];
