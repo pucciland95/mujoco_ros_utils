@@ -4,6 +4,26 @@
 
 #include <iostream>
 
+class ParallelPixelDepthOpencv : public cv::ParallelLoopBody
+{
+private:
+   cv::Mat* p_ ;
+   float near_;
+   float far_;
+public:
+   ParallelPixelDepthOpencv(cv::Mat* ptr, float near, float far ) : p_(ptr), near_(near_), far_(far) {}
+
+   virtual void operator()( const cv::Range &r ) const
+   {
+      for (int i = r.start; i < r.end; ++i)
+      {
+         int row = i / p_->cols;
+         int col = i % p_->cols;
+         p_->at<float>(row, col) = near_ / (1.0f - p_->at<float>(row, col) * (1.0f - near_ / far_));
+      }
+   }
+};
+
 namespace MujocoRosUtils
 {
 
@@ -238,12 +258,8 @@ ImagePublisher::ImagePublisher(const mjModel * m,
   }
 
   // Allocate buffer
-  size_t color_buffer_size = sizeof(unsigned char) * 3 * viewport_.width * viewport_.height;
-  size_t depth_buffer_size = sizeof(float) * viewport_.width * viewport_.height;
-  color_buffer_ = static_cast<unsigned char *>(std::malloc(color_buffer_size));
-  depth_buffer_ = static_cast<float *>(std::malloc(depth_buffer_size));
-  color_buffer_flipped_ = static_cast<unsigned char *>(std::malloc(color_buffer_size));
-  depth_buffer_flipped_ = static_cast<float *>(std::malloc(depth_buffer_size));
+  color_buffer_opencv_ptr_ = std::make_unique<cv::Mat> (viewport_.height, viewport_.width, CV_8UC3);
+  depth_buffer_opencv_ptr_ = std::make_unique<cv::Mat> (viewport_.height, viewport_.width, CV_32FC1);
 
   // Init ROS
   int argc = 0;
@@ -279,7 +295,7 @@ void ImagePublisher::compute(const mjModel * m, mjData * d, int // plugin_id
 
   // Make context current
   // \todo Is it OK to override the current context of OpenGL?
-  glfwMakeContextCurrent(window_);
+//   glfwMakeContextCurrent(window_);
 
   // Update abstract scene
   mjv_updateScene(m, d, &option_, nullptr, &camera_, mjCAT_STATIC | mjCAT_DYNAMIC, &scene_);
@@ -288,57 +304,33 @@ void ImagePublisher::compute(const mjModel * m, mjData * d, int // plugin_id
   mjr_render(viewport_, &scene_, &context_);
 
   // Read rgb and depth pixels
-  mjr_readPixels(color_buffer_, depth_buffer_, viewport_, &context_);
+  mjr_readPixels(color_buffer_opencv_ptr_->data, NULL, viewport_, &context_);
 
   // Convert raw depth to distance and flip images
   float near = static_cast<float>(m->vis.map.znear * m->stat.extent);
   float far = static_cast<float>(m->vis.map.zfar * m->stat.extent);
-  for(int w = 0; w < viewport_.width; w++)
-  {
-    for(int h = 0; h < viewport_.height; h++)
-    {
-      int idx = h * viewport_.width + w;
-      int idx_flipped = (viewport_.height - 1 - h) * viewport_.width + w;
 
-      // See
-      // https://github.com/deepmind/mujoco/blob/631b16e7ad192df936195658fe79f2ada85f755c/python/mujoco/renderer.py#L175-L178
-      depth_buffer_[idx] = near / (1.0f - depth_buffer_[idx] * (1.0f - near / far));
-
-      for(int c = 0; c < 3; c++)
-      {
-        color_buffer_flipped_[3 * idx_flipped + c] = color_buffer_[3 * idx + c];
-      }
-      depth_buffer_flipped_[idx_flipped] = depth_buffer_[idx];
-    }
-  }
+  // https://github.com/deepmind/mujoco/blob/631b16e7ad192df936195658fe79f2ada85f755c/python/mujoco/renderer.py#L175-L178
+  // ParallelPixelDepthOpencv obj(depth_buffer_opencv_ptr_.get(), near, far);
+  // cv::parallel_for_( cv::Range(0, depth_buffer_opencv_ptr_->rows * depth_buffer_opencv_ptr_->cols), obj) ;
 
   // Publish topic
   rclcpp::Time stamp_now = nh_->get_clock()->now();
 
-  sensor_msgs::msg::Image color_msg;
-  color_msg.header.stamp = stamp_now;
-  color_msg.header.frame_id = frame_id_;
-  color_msg.height = viewport_.height;
-  color_msg.width = viewport_.width;
-  color_msg.encoding = "rgb8";
-  color_msg.is_bigendian = 0;
-  color_msg.step = static_cast<unsigned int>(sizeof(unsigned char) * 3 * viewport_.width);
-  color_msg.data.resize(sizeof(unsigned char) * 3 * viewport_.width * viewport_.height);
-  std::memcpy(&color_msg.data[0], color_buffer_flipped_,
-              sizeof(unsigned char) * 3 * viewport_.width * viewport_.height);
-  color_pub_->publish(color_msg);
+  // Common header
+  std_msgs::msg::Header header;
+  header.stamp = stamp_now;
+  header.frame_id = frame_id_;
 
-  sensor_msgs::msg::Image depth_msg;
-  depth_msg.header.stamp = stamp_now;
-  depth_msg.header.frame_id = frame_id_;
-  depth_msg.height = viewport_.height;
-  depth_msg.width = viewport_.width;
-  depth_msg.encoding = "32FC1";
-  depth_msg.is_bigendian = 0;
-  depth_msg.step = static_cast<unsigned int>(sizeof(float) * viewport_.width);
-  depth_msg.data.resize(sizeof(float) * viewport_.width * viewport_.height);
-  std::memcpy(&depth_msg.data[0], depth_buffer_flipped_, sizeof(float) * viewport_.width * viewport_.height);
-  depth_pub_->publish(depth_msg);
+  cv::flip(*color_buffer_opencv_ptr_, *color_buffer_opencv_ptr_, 0);
+  cv_bridge::CvImage cv_bridge_color_image = cv_bridge::CvImage(header, sensor_msgs::image_encodings::RGB8, *color_buffer_opencv_ptr_);
+  std::shared_ptr<sensor_msgs::msg::Image> color_msg = cv_bridge_color_image.toImageMsg();
+  color_pub_->publish(*color_msg);
+
+  cv::flip(*depth_buffer_opencv_ptr_, *depth_buffer_opencv_ptr_, 0);
+  cv_bridge::CvImage cv_bridge_depth_image = cv_bridge::CvImage(header, sensor_msgs::image_encodings::TYPE_32FC1, *depth_buffer_opencv_ptr_);
+  std::shared_ptr<sensor_msgs::msg::Image> depth_msg = cv_bridge_depth_image.toImageMsg();
+  depth_pub_->publish(*depth_msg);
 
   sensor_msgs::msg::CameraInfo info_msg;
   info_msg.header.stamp = stamp_now;
@@ -361,11 +353,6 @@ void ImagePublisher::compute(const mjModel * m, mjData * d, int // plugin_id
 
 void ImagePublisher::free()
 {
-  std::free(color_buffer_);
-  std::free(depth_buffer_);
-  std::free(color_buffer_flipped_);
-  std::free(depth_buffer_flipped_);
-
   mjr_freeContext(&context_);
   mjv_freeScene(&scene_);
 

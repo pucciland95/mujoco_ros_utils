@@ -12,6 +12,7 @@ target_include_directories(MujocoRosUtils PUBLIC ${ament_INCLUDE_DIRS})
 include_directories(
   include
   ${EIGEN3_INCLUDE_DIR}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 ament_target_dependencies(
@@ -23,6 +24,7 @@ ament_target_dependencies(
   visualization_msgs
   tf2_ros
   tf2_eigen
+  cv_bridge
   sensor_msgs
   builtin_interfaces)
 add_dependencies(MujocoRosUtils ${PROJECT_NAME})
@@ -30,7 +32,7 @@ rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME}
                               "rosidl_typesupport_cpp")
 target_link_libraries(MujocoRosUtils PUBLIC ${cpp_typesupport_target}
                                             ${ament_LIBRARIES})
-target_link_libraries(MujocoRosUtils PUBLIC ${LIB_MUJOCO} glfw)
+target_link_libraries(MujocoRosUtils PUBLIC ${LIB_MUJOCO} glfw ${OpenCV_LIBS})
 
 add_library(MujocoRosUtilsPlugin SHARED Plugin.cpp)
 target_include_directories(MujocoRosUtilsPlugin PRIVATE ${MUJOCO_INCLUDE_DIR})

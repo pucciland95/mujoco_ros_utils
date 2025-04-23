@@ -12,6 +12,9 @@
 
 #include <GLFW/glfw3.h>
 #include <string>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include "cv_bridge/cv_bridge.h"
 
 namespace MujocoRosUtils
 {
@@ -92,10 +95,8 @@ protected:
 
   //! Data buffer
   //! @{
-  unsigned char * color_buffer_;
-  float * depth_buffer_;
-  unsigned char * color_buffer_flipped_;
-  float * depth_buffer_flipped_;
+  std::unique_ptr<cv::Mat> color_buffer_opencv_ptr_;
+  std::unique_ptr<cv::Mat> depth_buffer_opencv_ptr_;
   //! @}
 
   //! Variables for visualization and rendering in MuJoCo
